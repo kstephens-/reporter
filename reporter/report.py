@@ -23,9 +23,9 @@ class AccessReport(object):
         self.state_country = state_country
 
         self.country_count = {}
-        self.country_page = {}
+        self.country_page_count = {}
         self.state_count = {}
-        self.state_page = {}
+        self.state_page_count = {}
 
         self._request_re = re.compile(FILTER_RE)
 
@@ -48,14 +48,14 @@ class AccessReport(object):
 
         print('{:25s}{:15s}{}'.format(
             'Country', 'Count', 'Most visited page'))
-        self._report(self.country_count, self.country_page)
+        self._report(self.country_count, self.country_page_count)
 
     def state_report(self):
         """ format data for report by state (US) """
 
         print('{:25s}{:15s}{}'.format(
             'State', 'Count', 'Most visited page'))
-        self._report(self.state_count, self.state_page)
+        self._report(self.state_count, self.state_page_count)
 
     def _report(self, counts, pages):
         """ print report items """
@@ -86,59 +86,34 @@ class AccessReport(object):
                 continue
 
             # count by country
-            self.update_country_count(record['country'])
-            self.update_country_page(
-                record['country'], record['page']
+            self._update_count(record['country'], 'country')
+            self._update_page_count(
+                record['country'], record['page'], 'country'
             )
 
             # count by state
-            self.update_state_count(
-                record['country'], record['state']
+            if self._country_filter(record['country']):
+                continue
+            self._update_count(record['state'], 'state')
+            self._update_page_count(
+                record['state'], record['page'], 'state'
             )
-            self.update_state_page(
-                record['country'], record['state'], record['page']
-            )
 
-    def update_country_count(self, country):
-        """ count requests by country """
+    def _update_count(self, key, type_):
+        counts = getattr(self, '{}_count'.format(type_))
         try:
-            self.country_count[country] += 1
+            counts[key] += 1
         except KeyError:
-            self.country_count[country] = 1
+            counts[key] = 1
 
-    def update_country_page(self, country, page):
-        """ count page views by country """
-        if country not in self.country_page:
-            self.country_page[country] = {}
+    def _update_page_count(self, key, page, type_):
+        counts = getattr(self, '{}_page_count'.format(type_))
+        if key not in counts:
+            counts[key] = {}
         try:
-            self.country_page[country][page] += 1
+            counts[key][page] += 1
         except KeyError:
-            self.country_page[country][page] = 1
-
-    def update_state_count(self, country, state):
-        """ count requests by state, optionally limited by country """
-        if self.state_country and \
-                country != self.state_country:
-            pass
-        else:
-            try:
-                self.state_count[state] += 1
-            except KeyError:
-                self.state_count[state] = 1
-
-    def update_state_page(self, country, state, page):
-        """ count page views by state, optionally limited by country """
-
-        if self.state_country and \
-                country != self.state_country:
-            pass
-        else:
-            if state not in self.state_page:
-                self.state_page[state] = {}
-            try:
-                self.state_page[state][page] += 1
-            except KeyError:
-                self.state_page[state][page] = 1
+            counts[key][page] = 1
 
     def _parse_file(self, path):
         print('Parsing file:', path)
@@ -152,6 +127,11 @@ class AccessReport(object):
     def _request_filter(self, request):
         """ filter based on request path """
         return self._request_re.search(request)
+
+    def _country_filter(self, country):
+        """ filter state counts based on country """
+        return self.state_country and \
+            country != self.state_country
 
     def _associate_ip(self, record):
         """ request geo data for ip """

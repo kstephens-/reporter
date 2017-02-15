@@ -2,6 +2,7 @@ import re
 
 
 class LineParser(object):
+    """ Base class for log line parsers """
 
     def parse(self, line):
         # package this in some kind of structure
@@ -11,6 +12,7 @@ class LineParser(object):
 
 
 class ApacheLogParser(LineParser):
+    """ Line parser for apache combined log format """
 
     _fields_re = re.compile(
         r'^([\d.]+) - [\w-]+ \[(.*?)\] "(.*?)" (\d+) ([\d-]+) "-" "(.*?)"'

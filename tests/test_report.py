@@ -51,62 +51,56 @@ class AccessReportTest(unittest.TestCase):
         result = r._associate_ip(test_case)
         self.assertEqual(expected, result)
 
-    def test_update_country_count(self):
+    def test_update_count(self):
 
-        test_case = [
-            'United States',
-            'China',
-            'China',
-            'Australia',
-            'France',
-            'China',
-            'United States'
+        test_cases = [
+            ('country', ['United States', 'China', 'China',
+             'Australia', 'France', 'China', 'United States']),
+            ('state', ['Washington', 'Washington', 'Delaware',
+             'California', 'Washington', 'California'])
         ]
-        expected = {
-            'China': 3,
-            'United States': 2,
-            'Australia': 1,
-            'France': 1
-        }
-        r = report.AccessReport()
-        for t in test_case:
-            r.update_country_count(t)
-        self.assertEqual(expected, r.country_count)
-
-    def test_update_country_page(self):
-
-        test_case = [
-            ('United States', '/entry/15201'),
-            ('China',  '/entry/15205'),
-            ('China', '/entry/15206'),
-            ('Australia', '/entry/15201'),
-            ('France', '/entry/15205'),
-            ('China', '/entry/15205'),
-            ('United States', '/entry/15209')
+        expected = [
+            {'China': 3, 'United States': 2, 'Australia': 1,
+             'France': 1},
+            {'Washington': 3, 'California': 2, 'Delaware': 1}
         ]
-        expected = {
-            'China': {
-                '/entry/15205': 2,
-                '/entry/15206': 1
-            },
-            'United States': {
-                '/entry/15201': 1,
-                '/entry/15209': 1
-            },
-            'Australia': {
-                '/entry/15201': 1
-            },
-            'France': {
-                '/entry/15205': 1
-            }
-        }
 
         r = report.AccessReport()
-        for country, page in test_case:
-            r.update_country_page(country, page)
-        self.assertEqual(expected, r.country_page)
+        for type_, data in test_cases:
+            for t in data:
+                r._update_count(t, type_)
+        self.assertEqual(expected[0], r.country_count)
+        self.assertEqual(expected[1], r.state_count)
 
-    def test_update_state_count(self):
+    def test_update_page_count(self):
+
+        test_cases = [
+            ('country', [('United States', '/entry/15201'),
+             ('China',  '/entry/15205'), ('China', '/entry/15206'),
+             ('Australia', '/entry/15201'), ('France', '/entry/15205'),
+             ('China', '/entry/15205'), ('United States', '/entry/15209')]),
+            ('state', [('Washington', '/entry/15201'),
+             ('Washington', '/entry/15205'), ('Delaware', '/entry/15206'),
+             ('California', '/entry/15201'), ('Washington', '/entry/15205'),
+             ('California', '/entry/15205')])
+        ]
+        expected = [
+            {'China': {'/entry/15205': 2, '/entry/15206': 1},
+             'United States': {'/entry/15201': 1, '/entry/15209': 1},
+             'Australia': {'/entry/15201': 1},
+             'France': {'/entry/15205': 1}},
+            {'Washington': {'/entry/15201': 1, '/entry/15205': 2},
+             'California': {'/entry/15201': 1, '/entry/15205': 1},
+             'Delaware': {'/entry/15206': 1}}
+        ]
+        r = report.AccessReport()
+        for type_, data in test_cases:
+            for key, page in data:
+                r._update_page_count(key, page, type_)
+        self.assertEqual(expected[0], r.country_page_count)
+        self.assertEqual(expected[1], r.state_page_count)
+
+    def test_country_filter(self):
 
         test_case = [
             ('United States', 'Washington'),
@@ -117,37 +111,13 @@ class AccessReportTest(unittest.TestCase):
             ('China', 'Guangdong'),
             ('United States', 'California')
         ]
-        expected = {
-            'Washington': 1,
-            'California': 1
-        }
-
-        r = report.AccessReport(state_country='United States')
-        for country, state in test_case:
-            r.update_state_count(country, state)
-        self.assertEqual(expected, r.state_count)
-
-    def test_update_state_page(self):
-
-        test_case = [
-            ('United States', 'Washington', '/entry/15201'),
-            ('China', 'Guangdong', '/entry/15205'),
-            ('China', 'Hunan', '/entry/15206'),
-            ('Australia', 'New South Whales', '/entry/15201'),
-            ('France', 'Ile-de-France', '/entry/15205'),
-            ('China', 'Guangdong', '/entry/15205'),
-            ('United States', 'California', '/entry/15209')
+        expected = [
+            'Washington', 'California'
         ]
-        expected = {
-            'Washington': {
-                '/entry/15201': 1
-            },
-            'California': {
-                '/entry/15209': 1
-            }
-        }
 
         r = report.AccessReport(state_country='United States')
-        for country, state, page in test_case:
-            r.update_state_page(country, state, page)
-        self.assertEqual(expected, r.state_page)
+        result = [
+            t[1] for t in test_case
+            if not r._country_filter(t[0])
+        ]
+        self.assertEqual(expected, result)
