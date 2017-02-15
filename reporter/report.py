@@ -15,7 +15,7 @@ FILTER_RE = (
 class AccessReport(object):
 
     def __init__(self, parser=parser.ApacheLogParser,
-                 db_file='data/GeoLite2-City.mmdb',
+                 db_file='reporter/data/GeoLite2-City.mmdb',
                  state_country=None):
 
         self.parser = parser()
