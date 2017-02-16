@@ -1,3 +1,9 @@
+DESCRIPTION
+-----------
+
+The access log reporter is a Python 3 package that produces a report of the top 10 countries and US states that visited the site, how many visitors came from each country or state, and the most visitied page from each country or state. If there are multiple pages that tie for the most visited page, the first page alphabetically is returned.
+
+
 INSTALLATION
 ------------
 

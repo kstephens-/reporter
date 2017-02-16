@@ -15,12 +15,19 @@ FILTER_RE = (
 class AccessReport(object):
 
     def __init__(self, parser=parser.ApacheLogParser,
-                 db_file='reporter/data/GeoLite2-City.mmdb',
+                 db_file=None, db_inst=None,
                  state_country=None):
 
         self.parser = parser()
-        self.geo_reader = db.Reader(db_file)
         self.state_country = state_country
+
+        if db_file:
+            self.geo_reader = db.Reader(db_file)
+        elif db_inst:
+            self.geo_reader = db_inst
+        else:
+            raise TypeError("'__init__' missing one required "
+                            "argument: db_file or db_inst")
 
         self.country_count = {}
         self.country_page_count = {}
@@ -66,7 +73,7 @@ class AccessReport(object):
                 reverse=True)[:10]:
 
             page_iter = (
-                (k, v) for k, v in pages[key].items()
+                (k, v) for k, v in sorted(pages[key].items())
                 if k != '/'
             )
             most_visited, _ = max(
@@ -81,7 +88,7 @@ class AccessReport(object):
 
         print('Aggregating data for', path)
         for log in self._parse_file(path):
-            record = self._associate_ip(log)
+            record = self._associate_ip(log['ip'], log['request'])
             if not record:
                 continue
 
@@ -133,17 +140,20 @@ class AccessReport(object):
         return self.state_country and \
             country != self.state_country
 
-    def _associate_ip(self, record):
-        """ request geo data for ip """
+    def _get_city_reocrd(self, ip):
         try:
-            city = self.geo_reader.city(record['ip'])
+            return self.geo_reader.city(ip)
         except gerr.AddressNotFoundError:
             return
-        method, page, http = record['request'].split(' ')
-        und = 'unknown'
-        return {
-            'ip': record['ip'],
-            'country': city.country.name or und,
-            'state': city.subdivisions.most_specific.name or und,
-            'page': page
-        }
+
+    def _associate_ip(self, ip, request):
+        ukn = 'unknown'
+        method, page, http = request.split(' ')
+        city = self._get_city_reocrd(ip)
+        if city:
+            return {
+                'ip': ip,
+                'country': city.country.name or und,
+                'state': city.subdivision.most_specific.name or und,
+                'page': page
+            }

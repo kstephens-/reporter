@@ -1,8 +1,27 @@
 import unittest
+import unittest.mock as mock
 import reporter.report as report
 
 
 class AccessReportTest(unittest.TestCase):
+
+    def setUp(self):
+
+        city_attrs = {
+            'country.name': 'China',
+            'subdivision.most_specific.name': 'Guangdong'
+        }
+        city = mock.MagicMock(**city_attrs)
+
+        db_attrs = {
+            'city.return_value': city
+        }
+        geo_db = mock.MagicMock(**db_attrs)
+
+        self.reporter = report.AccessReport(
+            db_inst=geo_db,
+            state_country='United States'
+        )
 
     def test_request_filter(self):
 
@@ -21,9 +40,9 @@ class AccessReportTest(unittest.TestCase):
         ]
         len_result = 1
 
-        r = report.AccessReport()
         result = [
-            t for t in test_cases if not r._request_filter(t)
+            t for t in test_cases
+            if not self.reporter._request_filter(t)
         ]
         self.assertEqual(len_result, len(result))
 
@@ -31,14 +50,7 @@ class AccessReportTest(unittest.TestCase):
 
         test_case = {
             'ip': '183.60.212.148',
-            'date': '26/Aug/2014:06:26:39 -600',
-            'request': 'GET /entry/15205 HTTP/1.1',
-            'status': '200',
-            'size': '4865',
-            'user_agent': (
-                'Mozilla/5.0 (compatible; EasouSpider; '
-                '+http://www.easou.com/search/spider.html)'
-            )
+            'request': 'GET /entry/15205 HTTP/1.1'
         }
         expected = {
             'ip': '183.60.212.148',
@@ -47,8 +59,9 @@ class AccessReportTest(unittest.TestCase):
             'page': '/entry/15205'
         }
 
-        r = report.AccessReport()
-        result = r._associate_ip(test_case)
+        result = self.reporter._associate_ip(
+            test_case['ip'], test_case['request']
+        )
         self.assertEqual(expected, result)
 
     def test_update_count(self):
@@ -65,12 +78,11 @@ class AccessReportTest(unittest.TestCase):
             {'Washington': 3, 'California': 2, 'Delaware': 1}
         ]
 
-        r = report.AccessReport()
         for type_, data in test_cases:
             for t in data:
-                r._update_count(t, type_)
-        self.assertEqual(expected[0], r.country_count)
-        self.assertEqual(expected[1], r.state_count)
+                self.reporter._update_count(t, type_)
+        self.assertEqual(expected[0], self.reporter.country_count)
+        self.assertEqual(expected[1], self.reporter.state_count)
 
     def test_update_page_count(self):
 
@@ -93,12 +105,12 @@ class AccessReportTest(unittest.TestCase):
              'California': {'/entry/15201': 1, '/entry/15205': 1},
              'Delaware': {'/entry/15206': 1}}
         ]
-        r = report.AccessReport()
+
         for type_, data in test_cases:
             for key, page in data:
-                r._update_page_count(key, page, type_)
-        self.assertEqual(expected[0], r.country_page_count)
-        self.assertEqual(expected[1], r.state_page_count)
+                self.reporter._update_page_count(key, page, type_)
+        self.assertEqual(expected[0], self.reporter.country_page_count)
+        self.assertEqual(expected[1], self.reporter.state_page_count)
 
     def test_country_filter(self):
 
@@ -115,9 +127,8 @@ class AccessReportTest(unittest.TestCase):
             'Washington', 'California'
         ]
 
-        r = report.AccessReport(state_country='United States')
         result = [
             t[1] for t in test_case
-            if not r._country_filter(t[0])
+            if not self.reporter._country_filter(t[0])
         ]
         self.assertEqual(expected, result)
