@@ -35,7 +35,7 @@ The access log reporter package provides a command line utility `access-report` 
 
 
 TESTS
-_____
+-----
 
 To run the tests, simply run the setup command with the test option inside the reporter directory.
 
