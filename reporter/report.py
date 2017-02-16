@@ -153,7 +153,7 @@ class AccessReport(object):
         if city:
             return {
                 'ip': ip,
-                'country': city.country.name or und,
-                'state': city.subdivision.most_specific.name or und,
+                'country': city.country.name or ukn,
+                'state': city.subdivisions.most_specific.name or ukn,
                 'page': page
             }

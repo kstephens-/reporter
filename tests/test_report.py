@@ -9,7 +9,7 @@ class AccessReportTest(unittest.TestCase):
 
         city_attrs = {
             'country.name': 'China',
-            'subdivision.most_specific.name': 'Guangdong'
+            'subdivisions.most_specific.name': 'Guangdong'
         }
         city = mock.MagicMock(**city_attrs)
 

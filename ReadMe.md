@@ -11,7 +11,7 @@ The access log reporter package can be installed by first cloning the repository
 
     git clone https://gitlab.com/kstephens-/reporter.git
 
-Then run the Python setup command inside the reporter directory.
+Then run the Python setup command with the install option inside the reporter directory.
 
     cd reporter
     python setup.py install
@@ -32,5 +32,14 @@ The access log reporter package provides a command line utility `access-report` 
                             path to maxmind database file
       -f [FILE], --file [FILE]
                             path to log file to process
+
+
+TESTS
+_____
+
+To run the tests, simply run the setup command with the test option inside the reporter directory.
+
+    cd reporter
+    python setup.py test
 
 
